@@ -4,6 +4,7 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
+from kivy.clock import Clock
 
 import asyncio
 import threading
@@ -13,11 +14,12 @@ import speech_recognition as sr
 
 
 class MyApp(App):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.stopThread = False
+        self.recognizer = sr.Recognizer()
+
     def build(self):
-        self.stop_listening = False
-
-        Window.bind(on_request_close=self.exit_on_request)
-
         # create a Box Layout
         boxLayout = BoxLayout(orientation="vertical")
 
@@ -31,32 +33,28 @@ class MyApp(App):
         boxLayout.add_widget(self.labelTextFromSpeech)
 
         # start a new thread that will listen to the microphone and transcribe speech
-        self.thread = threading.Thread(target=self.start_recording)
-        self.thread.start()
+        threading.Thread(target=self.start_recording).start()
 
         return boxLayout
     
-    def exit_on_request(self, *args):    
-        # stop listening
-        self.stop_listening = True 
-        # stop the thread
-        self.thread.join()
-        # stop the app
-        App.get_running_app().stop()
+    def on_stop(self):
+        # stop listening when the app closes
+        self.stopThread = True
         return True
 
     def start_recording(self):  
-        # create and run the event loop with the start_listening coroutine until the app is closed
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.start_listening())
-        loop.close()
+        asyncio.run(self.start_listening())
+        asyncio.run(self.set_recording())
 
-    async def start_listening(self):
-        self.recognizer = sr.Recognizer()       
-        while not self.stop_listening: 
-            with sr.Microphone() as source:
-                audio = self.recognizer.listen(source, timeout=None, phrase_time_limit=6)
+    async def start_listening(self):    
+        while not self.stopThread: 
             self.labelStatus.text = "Слушане..."
+            try:
+                with sr.Microphone() as source:
+                    audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=6)
+            except sr.WaitTimeoutError:
+                continue
+
             if not audio:
                 continue
 
@@ -66,7 +64,7 @@ class MyApp(App):
                 print("You said:", text)
                 if text == "Хей Гери":
                     self.labelStatus.text = "Здравей Христо..."
-                    await self.set_recording()
+                    break
             except sr.UnknownValueError:
                 print("Unable to recognize speech")
             except sr.RequestError as e:
@@ -75,13 +73,15 @@ class MyApp(App):
             time.sleep(0.02)
 
     async def set_recording(self):
-        while not self.stop_listening:
-            with sr.Microphone() as source:
-                audio = self.recognizer.listen(source, timeout=None, phrase_time_limit=6)
+        while not self.stopThread:
             self.labelStatus.text = "Какво ще желаеш?..."
+            try:
+                with sr.Microphone() as source:
+                    audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=6)
+            except sr.WaitTimeoutError:
+                continue        
             if not audio:
                 continue
-
             # when audio is recorded and trascripted if the text is "Спри" stop recording
             try:
                 text = self.recognizer.recognize_google(audio, language="bg-BG")
@@ -97,5 +97,8 @@ class MyApp(App):
                 print(f"Error: {e}")
             time.sleep(0.02)
 
-if __name__ == '__main__':
+def main():
     MyApp().run()
+
+if __name__ == '__main__':
+    main()
