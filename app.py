@@ -33,10 +33,10 @@ class MyApp(App):
         boxLayout = BoxLayout(orientation="vertical")
 
         # create a label for status display
-        self.labelStatus = Label(text="Ready for recording...", font_size=24)
+        self.labelStatus = Label(text="Кажете нещо...", font_size=24)
 
         # create a label for displaying the text from speech
-        self.labelTextFromSpeech = Label(text="Text Here ...", font_size=36)
+        self.labelTextFromSpeech = Label(text="Текст тука ...", font_size=36)
 
         boxLayout.add_widget(self.labelStatus)
         boxLayout.add_widget(self.labelTextFromSpeech)
@@ -101,7 +101,9 @@ class MyApp(App):
                 else:
                     self.labelTextFromSpeech.text = text
             except sr.UnknownValueError:
-                print("Unable to recognize speech")
+                print("не мога да разбера")
+                self.labelStatus.text = "Не мога да разбера"
+                await self.speech()
             except sr.RequestError as e:
                 print(f"Error: {e}")
             time.sleep(0.02)
