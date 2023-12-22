@@ -71,8 +71,7 @@ class MyApp(App):
                 text = self.recognizer.recognize_google(audio, language="bg-BG")
                 print("You said:", text.lower())
                 if text.lower() == "хей гери":
-                    self.labelStatus.text = "Здравей Христо, с какво мога да ти помогна?"
-                    await self.speech()
+                    self.speech("Здравей Христо, с какво мога да ти помогна?")
                     break
             except sr.UnknownValueError:
                 print("Unable to recognize speech")
@@ -94,22 +93,20 @@ class MyApp(App):
             try:
                 text = self.recognizer.recognize_google(audio, language="bg-BG")
                 print("You said:", text.lower())
-                if text.lower() == "довиждане" or text == "чао":
-                    self.labelStatus.text = "Довиждане..."
-                    await self.speech()
+                if text.lower() == "довиждане" or text.lower() == "чао":
+                    self.speech("Довиждане...")
                     break
                 else:
                     self.labelTextFromSpeech.text = text
             except sr.UnknownValueError:
                 print("не мога да разбера")
-                self.labelStatus.text = "Не мога да разбера"
-                await self.speech()
+                self.speech("Не мога да разбера")
             except sr.RequestError as e:
                 print(f"Error: {e}")
             time.sleep(0.02)
 
-    async def speech(self):
-        text = self.labelStatus.text
+    def speech(self, text : str):
+        self.labelStatus.text = text
         speech = gTTS(text=text, lang="bg")
         speech.save("text.mp3")
         playsound("text.mp3")
