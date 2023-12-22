@@ -1,3 +1,10 @@
+# pip install kivy --upgrade --pre
+# pip install SpeechRecognition
+# pip install PyAudio
+# pip install gtts
+# pip install playsound
+import os
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
 import kivy
 from kivy.app import App
 from kivy.uix.label import Label
@@ -11,6 +18,8 @@ import threading
 import time
 
 import speech_recognition as sr 
+from gtts import gTTS
+from playsound import playsound
 
 
 class MyApp(App):
@@ -46,12 +55,11 @@ class MyApp(App):
         asyncio.run(self.start_listening())
         asyncio.run(self.set_recording())
 
-    async def start_listening(self):    
-        while not self.stopThread: 
-            self.labelStatus.text = "Слушане..."
+    async def start_listening(self):
+        while not self.stopThread:            
             try:
                 with sr.Microphone() as source:
-                    audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=6)
+                    audio = self.recognizer.listen(source, phrase_time_limit=5)
             except sr.WaitTimeoutError:
                 continue
 
@@ -61,9 +69,10 @@ class MyApp(App):
             # when audio is recorded and trascripted if the text is "Хей Гери" start recording
             try:
                 text = self.recognizer.recognize_google(audio, language="bg-BG")
-                print("You said:", text)
-                if text == "Хей Гери":
-                    self.labelStatus.text = "Здравей Христо..."
+                print("You said:", text.lower())
+                if text.lower() == "хей гери":
+                    self.labelStatus.text = "Здравей Христо, с какво мога да ти помогна?"
+                    await self.speech()
                     break
             except sr.UnknownValueError:
                 print("Unable to recognize speech")
@@ -73,11 +82,10 @@ class MyApp(App):
             time.sleep(0.02)
 
     async def set_recording(self):
-        while not self.stopThread:
-            self.labelStatus.text = "Какво ще желаеш?..."
+        while not self.stopThread:          
             try:
                 with sr.Microphone() as source:
-                    audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=6)
+                    audio = self.recognizer.listen(source, phrase_time_limit=5)
             except sr.WaitTimeoutError:
                 continue        
             if not audio:
@@ -85,9 +93,10 @@ class MyApp(App):
             # when audio is recorded and trascripted if the text is "Спри" stop recording
             try:
                 text = self.recognizer.recognize_google(audio, language="bg-BG")
-                print("You said:", text)
-                if text == "спри":
+                print("You said:", text.lower())
+                if text.lower() == "довиждане" or text == "чао":
                     self.labelStatus.text = "Довиждане..."
+                    await self.speech()
                     break
                 else:
                     self.labelTextFromSpeech.text = text
@@ -96,6 +105,13 @@ class MyApp(App):
             except sr.RequestError as e:
                 print(f"Error: {e}")
             time.sleep(0.02)
+
+    async def speech(self):
+        text = self.labelStatus.text
+        speech = gTTS(text=text, lang="bg")
+        speech.save("text.mp3")
+        playsound("text.mp3")
+        os.remove("text.mp3")
 
 def main():
     MyApp().run()
