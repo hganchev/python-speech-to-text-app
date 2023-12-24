@@ -2,7 +2,7 @@
 # pip install SpeechRecognition
 # pip install PyAudio
 # pip install gtts
-# pip install playsound
+# pip install playsound==1.2.2
 import os
 os.environ["KIVY_NO_CONSOLELOG"] = "1"
 import kivy
@@ -20,6 +20,11 @@ import time
 import speech_recognition as sr 
 from gtts import gTTS
 from playsound import playsound
+
+from enum import Enum
+
+class Catalog(Enum):
+    pokupki = 665
 
 
 class MyApp(App):
@@ -58,7 +63,10 @@ class MyApp(App):
     async def start_listening(self):
         while not self.stopThread:            
             try:
+                # for mic in sr.Microphone.list_microphone_names():
+                #     print(mic)
                 with sr.Microphone() as source:
+                    # self.recognizer.adjust_for_ambient_noise(source=source)
                     audio = self.recognizer.listen(source, phrase_time_limit=5)
             except sr.WaitTimeoutError:
                 continue
@@ -75,10 +83,11 @@ class MyApp(App):
                     break
             except sr.UnknownValueError:
                 print("Unable to recognize speech")
+                self.speech("Не мога да разбера")
             except sr.RequestError as e:
                 print(f"Error: {e}")
             
-            time.sleep(0.02)
+            time.sleep(0.1)
 
     async def set_recording(self):
         while not self.stopThread:          
