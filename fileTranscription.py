@@ -6,7 +6,7 @@ import speech_recognition as sr
 
 # FILEPATH: /e:/MyProjects/Projects/GitHub/python-speech-to-text-app/fileTranscription.py
 AUDIO_FILE = "./audio/audio4.m4a"
-AUDIO_FILE_WAV = "./audio/audio4.wav"
+AUDIO_FILE_WAV = "./audio/audio1.wav"
 
 # Load the audio file
 from pydub import AudioSegment
@@ -47,9 +47,16 @@ r = sr.Recognizer()
 
 # Split the audio file into chunks accirding to the duration of the audio file and export them as wav files
 arrChunks = []
+duration = int(audio.duration_seconds / 60)
+duration_audio = 0
 for i in range(int(audio.duration_seconds / 60)):
     chunk = audio[i*60*1000:(i+1)*60*1000]
+    duration_audio += 60 * 1000
     arrChunks.append(chunk)
+
+# last chunk
+chunk = audio[duration_audio:]
+arrChunks.append(chunk)
 
 for i, chunk in enumerate(arrChunks):
     chunk.export(f"./audio/audio{i}.wav", format="wav", bitrate="192k", parameters=["-ac", "1", "-ar", "16000"])
